@@ -1,573 +1,528 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-أداة الذكاء الاصطناعي للأمن السيبراني
-AI Cybersecurity Assistant
+مساعد الأمن السيبراني الذكي - نسخة متقدمة
+Advanced AI Cybersecurity Assistant
 """
 
 import sys
 import os
-from colorama import Fore, Style, init
+import json
+from datetime import datetime
+from colorama import Fore, Back, Style, init
 
 init(autoreset=True)
 
-# قاعدة البيانات الضخمة للأمن السيبراني
-CYBERSECURITY_DATABASE = {
-    'الثغرات الشائعة': {
+# قاعدة البيانات الضخمة
+AI_DATABASE = {
+    'الثغرات': {
         'SQL Injection': {
-            'الوصف': 'حقن كود SQL في حقول الإدخال',
-            'الخطورة': 'حرجة جداً',
-            'الأعراض': 'رسائل خطأ غريبة، قاعدة بيانات مكشوفة',
-            'الحل': [
-                '1. استخدم Prepared Statements',
-                '2. تحقق من الإدخال من جانب الخادم',
-                '3. استخدم ORM frameworks',
-                '4. قيّد صلاحيات قاعدة البيانات',
-                '5. استخدم WAF (Web Application Firewall)'
+            'الخطورة': '🔴 حرجة جداً',
+            'الوصف': 'حقن كود SQL في حقول الإدخال لسرقة البيانات',
+            'الأعراض': ['رسائل خطأ من قاعدة البيانات', 'قاعدة بيانات مكشوفة', 'عمليات غير متوقعة'],
+            'الحلول': [
+                '✓ استخدم Prepared Statements والـ Parameterized Queries',
+                '✓ تحقق من الإدخال من جانب الخادم (Server-side validation)',
+                '✓ استخدم ORM frameworks (Hibernate, Sequelize)',
+                '✓ قيّد صلاحيات قاعدة البيانات (Principle of least privilege)',
+                '✓ استخدم WAF (Web Application Firewall)',
+                '✓ قم بـ Input sanitization و filtering'
             ],
-            'الأدوات': 'SQLMap, Burp Suite, OWASP ZAP',
-            'المعايير': 'OWASP Top 10, CWE-89'
+            'الأدوات': 'SQLMap, Burp Suite, OWASP ZAP, Acunetix',
+            'الكود_الآمن': 'استخدم: statement = db.prepare("SELECT * FROM users WHERE id = ?"); statement.setInt(1, userId);',
+            'المعايير': 'CWE-89, OWASP A03:2021'
         },
         
         'XSS (Cross-Site Scripting)': {
-            'الوصف': 'حقن كود JavaScript في الصفحة',
-            'الخطورة': 'عالية جداً',
-            'الأعراض': 'سرقة كوكيز، إعادة توجيه غير متوقعة',
-            'الحل': [
-                '1. استخدم Content Security Policy (CSP)',
-                '2. قم بتصفية المدخلات',
-                '3. استخدم HTML encoding',
-                '4. تحديث المكتبات بانتظام',
-                '5. استخدم HttpOnly و Secure flags'
+            'الخطورة': '🟠 عالية جداً',
+            'الوصف': 'حقن كود JavaScript في الصفحة لسرقة بيانات المستخدمين',
+            'الأعراض': ['سرقة الـ Cookies', 'إعادة توجيه خطيرة', 'تسجيل الضغطات'],
+            'الحلول': [
+                '✓ استخدم Content Security Policy (CSP)',
+                '✓ قم بـ HTML encoding للمدخلات',
+                '✓ استخدم attribute encoding',
+                '✓ استخدم JavaScript encoding',
+                '✓ فعّل HttpOnly و Secure flags على الـ Cookies',
+                '✓ تحديث المكتبات والـ frameworks بانتظام'
             ],
-            'الأدوات': 'Burp Suite, OWASP ZAP, Acunetix',
-            'المعايير': 'OWASP Top 10, CWE-79'
+            'الأدوات': 'Burp Suite, OWASP ZAP, BeEF',
+            'الكود_الآمن': 'استخدم: textContent بدلاً من innerHTML',
+            'المعايير': 'CWE-79, OWASP A07:2021'
         },
         
-        'CSRF (Cross-Site Request Forgery)': {
+        'CSRF': {
+            'الخطورة': '🟠 عالية',
             'الوصف': 'إجبار المستخدم على تنفيذ طلب غير مرغوب',
-            'الخطورة': 'عالية',
-            'الأعراض': 'عمليات غير مرغوبة بدون علم المستخدم',
-            'الحل': [
-                '1. استخدم CSRF tokens',
-                '2. تحقق من Referrer header',
-                '3. استخدم SameSite cookie flag',
-                '4. اطلب تأكيد للعمليات الحساسة',
-                '5. استخدم POST بدلاً من GET'
+            'الأعراض': ['عمليات مالية غير مرغوبة', 'تغيير كلمة المرور', 'حذف البيانات'],
+            'الحلول': [
+                '✓ استخدم CSRF tokens في كل نموذج',
+                '✓ تحقق من Referrer header',
+                '✓ استخدم SameSite cookie attribute',
+                '✓ اطلب تأكيد للعمليات الحساسة',
+                '✓ استخدم POST/PUT/DELETE بدلاً من GET',
+                '✓ استخدم HTTP headers للتحقق'
             ],
             'الأدوات': 'Burp Suite, OWASP ZAP',
-            'المعايير': 'OWASP Top 10, CWE-352'
-        },
-        
-        'XXE (XML External Entity)': {
-            'الوصف': 'استخدام كيانات XML خارجية خبيثة',
-            'الخطورة': 'عالية جداً',
-            'الأعراض': 'تسريب البيانات، حرمان الخدمة',
-            'الحل': [
-                '1. عطّل المعالجات الخارجية',
-                '2. تحقق من XML المُدخل',
-                '3. استخدم مكتبات آمنة',
-                '4. استخدم JSON بدلاً من XML',
-                '5. قم بتقييم وتقييد حجم الملفات'
-            ],
-            'الأدوات': 'Burp Suite, XXEinjector',
-            'المعايير': 'OWASP Top 10, CWE-611'
+            'الكود_الآمن': 'أضف token في HTML: <input type="hidden" name="csrf_token" value="...">',
+            'المعايير': 'CWE-352, OWASP A01:2021'
         },
         
         'Broken Authentication': {
-            'الوصف': 'ضعف في نظام المصادقة',
-            'الخطورة': 'حرجة جداً',
-            'الأعراض': 'سرقة حسابات، تخطي المصادقة',
-            'الحل': [
-                '1. استخدم Multi-Factor Authentication (MFA)',
-                '2. استخدم password hashing (bcrypt, Argon2)',
-                '3. حدّد محاولات دخول',
-                '4. استخدم session management آمن',
-                '5. استخدم HTTPS فقط'
+            'الخطورة': '🔴 حرجة جداً',
+            'الوصف': 'ضعف في نظام المصادقة والتحقق من الهوية',
+            'الأعراض': ['سرقة الحسابات', 'تسجيل دخول بدون كلمة مرور', 'جلسات ضعيفة'],
+            'الحلول': [
+                '✓ استخدم Multi-Factor Authentication (MFA/2FA)',
+                '✓ استخدم password hashing قوي (bcrypt, Argon2)',
+                '✓ حدّد محاولات الدخول (Rate limiting)',
+                '✓ استخدم session management آمن',
+                '✓ استخدم HTTPS فقط',
+                '✓ استخدم secure session cookies'
             ],
-            'الأدوات': 'Burp Suite, Hashcat',
-            'المعايير': 'OWASP Top 10, CWE-287'
+            'الأدوات': 'Hashcat, John the Ripper, Burp Suite',
+            'الكود_الآمن': 'const hashedPassword = await bcrypt.hash(password, 10);',
+            'المعايير': 'CWE-287, OWASP A07:2021'
         },
         
         'Sensitive Data Exposure': {
-            'الوصف': 'تعريض البيانات الحساسة',
-            'الخطورة': 'حرجة جداً',
-            'الأعراض': 'معلومات شخصية مكشوفة، أرقام بطاقات',
-            'الحل': [
-                '1. استخدم HTTPS دائماً',
-                '2. قم بتشفير البيانات في الراحة',
-                '3. قيّم صلاحيات الوصول',
-                '4. احذف البيانات القديمة',
-                '5. استخدم TLS 1.2 أو أعلى'
+            'الخطورة': '🔴 حرجة جداً',
+            'الوصف': 'تعريض البيانات الحساسة مثل الأرقام والكلمات المرورية',
+            'الأعراض': ['بيانات شخصية مكشوفة', 'أرقام بطاقات ائتمان', 'كلمات مرور مرئية'],
+            'الحلول': [
+                '✓ استخدم HTTPS/TLS 1.2 أو أعلى دائماً',
+                '✓ قم بتشفير البيانات في الراحة (Encryption at rest)',
+                '✓ قم بتشفير البيانات أثناء النقل (Encryption in transit)',
+                '✓ قيّم صلاحيات الوصول بشكل صارم',
+                '✓ احذف البيانات القديمة والمؤقتة',
+                '✓ استخدم مفاتيح التشفير القوية'
             ],
             'الأدوات': 'OpenSSL, Wireshark, Burp Suite',
-            'المعايير': 'OWASP Top 10, CWE-327'
+            'الكود_الآمن': 'استخدم AES-256 للتشفير: from cryptography.fernet import Fernet',
+            'المعايير': 'CWE-327, OWASP A02:2021'
+        },
+        
+        'XXE (XML External Entity)': {
+            'الخطورة': '🔴 حرجة جداً',
+            'الوصف': 'استخدام كيانات XML خارجية لسرقة البيانات',
+            'الأعراض': ['تسريب ملفات النظام', 'هجمات SSRF', 'حرمان الخدمة'],
+            'الحلول': [
+                '✓ عطّل DTD (Document Type Definition)',
+                '✓ عطّل المعالجات الخارجية في مكتبات XML',
+                '✓ تحقق من XML المُدخل بعناية',
+                '✓ استخدم مكتبات XML آمنة',
+                '✓ استخدم JSON بدلاً من XML عند الإمكان',
+                '✓ قم بالتحقق من حجم الملفات'
+            ],
+            'الأدوات': 'XXEinjector, Burp Suite',
+            'الكود_الآمن': 'عطّل XXE: parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)',
+            'المعايير': 'CWE-611, OWASP A05:2021'
         },
         
         'Security Misconfiguration': {
-            'الوصف': 'إعدادات أمان ضعيفة',
-            'الخطورة': 'عالية',
-            'الأعراض': 'ملفات إعدادات مكشوفة، خدمات غير آمنة',
-            'الحل': [
-                '1. ثبّت التصحيحات الأمنية بانتظام',
-                '2. أغلق المنافذ غير الضرورية',
-                '3. احذف الحسابات الافتراضية',
-                '4. استخدم HTTPS فقط',
-                '5. قم بتقسيم الشبكات'
+            'الخطورة': '🟠 عالية',
+            'الوصف': 'إعدادات أمان ضعيفة وافتراضية خطيرة',
+            'الأعراض': ['ملفات إعدادات مكشوفة', 'خدمات غير ضرورية مفعّلة', 'صلاحيات افتراضية'],
+            'الحلول': [
+                '✓ ثبّت التصحيحات الأمنية بانتظام (Patch management)',
+                '✓ أغلق المنافذ والخدمات غير الضرورية',
+                '✓ احذف الحسابات والكلمات المرورية الافتراضية',
+                '✓ استخدم HTTPS فقط',
+                '✓ قيّم التكوينات الأمنية بشكل دوري',
+                '✓ استخدم security headers'
             ],
             'الأدوات': 'Nessus, OpenVAS, Qualys',
-            'المعايير': 'OWASP Top 10, CWE-16'
-        },
-        
-        'Insecure Deserialization': {
-            'الوصف': 'معالجة غير آمنة للبيانات المسلسلة',
-            'الخطورة': 'حرجة جداً',
-            'الأعراض': 'تنفيذ كود بعيد، تسريب البيانات',
-            'الحل': [
-                '1. لا تستخدم serialization للبيانات الموثوقة',
-                '2. تحقق من البيانات المُدخلة',
-                '3. استخدم مكتبات آمنة',
-                '4. استخدم JSON بدلاً من binary formats',
-                '5. قم بالتوقيع الرقمي للبيانات'
-            ],
-            'الأدوات': 'ysoserial, Burp Suite',
-            'ا��معايير': 'OWASP Top 10, CWE-502'
-        },
-        
-        'Broken Access Control': {
-            'الوصف': 'ضعف في التحكم بالوصول',
-            'الخطورة': 'حرجة جداً',
-            'الأعراض': 'وصول غير مصرح، تجاوز الصلاحيات',
-            'الحل': [
-                '1. استخدم Role-Based Access Control (RBAC)',
-                '2. تحقق من الصلاحيات على جميع الطلبات',
-                '3. استخدم Zero Trust model',
-                '4. سجّل محاولات الوصول المرفوضة',
-                '5. قيّم الصلاحيات بانتظام'
-            ],
-            'الأدوات': 'Burp Suite, OWASP ZAP',
-            'المعايير': 'OWASP Top 10, CWE-284'
+            'الكود_الآمن': 'أضف headers: X-Frame-Options, X-Content-Type-Options, CSP',
+            'المعايير': 'CWE-16, OWASP A05:2021'
         },
     },
     
-    'الهجمات الشهيرة': {
-        'DDoS (Distributed Denial of Service)': {
-            'الوصف': 'هجوم لشل الخدمة من عدة مصادر',
-            'الخطورة': 'عالية جداً',
-            'الأنواع': 'Volumetric, Protocol, Application layer',
-            'الحماية': [
-                '1. استخدم DDoS mitigation services',
-                '2. قلّل حجم الاستجابة',
-                '3. استخدم rate limiting',
-                '4. قيّد عرض النطاق الترددي',
-                '5. استخدم Web Application Firewall'
+    'الهجمات_الشهيرة': {
+        'DDoS Attack': {
+            'النوع': '⚔️ هجوم إنكار الخدمة',
+            'الخطورة': '🟠 عالية جداً',
+            'الوصف': 'هجوم لشل الخدمة بإرسال طلبات كثيرة من عدة مصادر',
+            'الأنواع': [
+                '1. Volumetric - استهلاك النطاق الترددي',
+                '2. Protocol - استهلاك الموارد',
+                '3. Application - استهداف التطبيق نفسه'
             ],
-            'الأدوات': 'CloudFlare, AWS Shield, Akamai'
+            'الحماية': [
+                '✓ استخدم DDoS mitigation services (CloudFlare, AWS Shield)',
+                '✓ قلّل حجم الاستجابات',
+                '✓ استخدم rate limiting',
+                '✓ قيّد عرض النطاق الترددي',
+                '✓ استخدم Web Application Firewall (WAF)',
+                '✓ قم بتوزيع الحمل (Load balancing)'
+            ],
+            'الأدوات': 'CloudFlare, AWS Shield, Akamai, Imperva'
         },
         
         'Man-in-the-Middle (MitM)': {
-            'الوصف': 'اعتراض الاتصالات بين طرفين',
-            'الخطورة': 'حرجة جداً',
-            'الأنواع': 'ARP Spoofing, DNS Spoofing, SSL Stripping',
-            'الحماية': [
-                '1. استخدم HTTPS/TLS',
-                '2. تحقق من شهادات SSL',
-                '3. استخدم VPN',
-                '4. استخدم Certificate Pinning',
-                '5. تفعيل HSTS'
+            'النوع': '⚔️ اعتراض الاتصالات',
+            'الخطورة': '🔴 حرجة جداً',
+            'الوصف': 'اعتراض الاتصالات بين طرفين لسرقة البيانات',
+            'الأنواع': [
+                '1. ARP Spoofing - خداع بروتوكول ARP',
+                '2. DNS Spoofing - خداع نظام الأسماء',
+                '3. SSL Stripping - إزالة التشفير'
             ],
-            'الأدوات': 'Wireshark, Mitmproxy, Burp Suite'
-        },
-        
-        'Brute Force': {
-            'الوصف': 'محاولات متكررة للتخمين',
-            'الخطورة': 'عالية',
-            'الأنواع': 'Password, API key, PIN',
             'الحماية': [
-                '1. استخدم strong passwords',
-                '2. حدّد محاولات الدخول',
-                '3. استخدم MFA',
-                '4. استخدم CAPTCHAs',
-                '5. استخدم account lockout'
+                '✓ استخدم HTTPS/TLS دائماً',
+                '✓ تحقق من شهادات SSL',
+                '✓ استخدم VPN',
+                '✓ استخدم Certificate Pinning',
+                '✓ فعّل HSTS',
+                '✓ استخدم مفاتيح SSH قوية'
             ],
-            'الأدوات': 'Hashcat, John the Ripper'
+            'الأدوات': 'Wireshark, Mitmproxy, Burp Suite, Ettercap'
         },
         
         'Phishing': {
-            'الوصف': 'خداع المستخدمين للحصول على بيانات',
-            'الخطورة': 'عالية',
-            'الأنواع': 'Email, SMS, Social Media',
-            'الحماية': [
-                '1. درّب الموظفين',
-                '2. استخدم email filters',
-                '3. تحقق من sender domains',
-                '4. استخدم MFA',
-                '5. فعّل SPF, DKIM, DMARC'
+            'النوع': '⚔️ خداع اجتماعي',
+            'الخطورة': '🟠 عالية جداً',
+            'الوصف': 'خداع المستخدمين للحصول على بيانات شخصية',
+            'الأنواع': [
+                '1. Email Phishing - رسائل بريد مزيفة',
+                '2. Spear Phishing - استهداف محدد',
+                '3. Clone Phishing - نسخ مواقع حقيقية'
             ],
-            'الأدوات': 'Gophish, SpamTitan'
+            'الحماية': [
+                '✓ درّب الموظفين على التعرف على الرسائل المريبة',
+                '✓ استخدم email filters والـ SPAM detection',
+                '✓ تحقق من sender domains (DKIM, SPF)',
+                '✓ استخدم MFA على الحسابات',
+                '✓ فعّل DMARC policy',
+                '✓ استخدم email authentication'
+            ],
+            'الأدوات': 'Gophish, SpamTitan, Proofpoint'
+        },
+        
+        'Brute Force': {
+            'النوع': '⚔️ هجوم القوة الغاشمة',
+            'الخطورة': '🟠 عالية',
+            'الوصف': 'محاولات متكررة لتخمين كلمات المرور',
+            'الأنواع': [
+                '1. Dictionary Attack - قائمة كلمات معروفة',
+                '2. Rainbow Table - جداول بيانات مسبقة',
+                '3. Hybrid Attack - مزيج من الطرق'
+            ],
+            'الحماية': [
+                '✓ استخدم كلمات مرور قوية (12+ حرف)',
+                '✓ حدّد محاولات الدخول (Rate limiting)',
+                '✓ استخدم MFA',
+                '✓ استخدم CAPTCHAs',
+                '✓ استخدم account lockout',
+                '✓ استخدم password hashing قوي'
+            ],
+            'الأدوات': 'Hashcat, John the Ripper, Hydra'
         },
     },
     
-    'أدوات الأمن السيبراني': {
+    'الأدوات': {
         'Burp Suite': {
-            'النوع': 'Web Security Testing',
-            'الاستخدام': 'اختبار الثغرات في تطبيقات الويب',
-            'الإصدار': 'Community, Professional, Enterprise',
+            'النوع': '🛠️ Web Security Testing',
+            'الاستخدام': 'اختبار تطبيقات الويب للثغرات',
+            'المميزات': ['Proxy', 'Scanner', 'Repeater', 'Intruder', 'Decoder'],
+            'الإصدار': 'Community (مجاني), Professional, Enterprise',
             'الرابط': 'https://portswigger.net/burp'
         },
         
         'OWASP ZAP': {
-            'النوع': 'Web Security Scanner',
+            'النوع': '🛠️ Web Security Scanner',
             'الاستخدام': 'فحص تطبيقات الويب تلقائياً',
-            'الإصدار': 'مفتوح المصدر',
+            'المميزات': ['Passive Scan', 'Active Scan', 'Fuzzing', 'API Scanning'],
+            'الإصدار': 'مفتوح المصدر (مجاني)',
             'الرابط': 'https://www.zaproxy.org/'
         },
         
         'Metasploit': {
-            'النوع': 'Penetration Testing',
-            'الاستخدام': 'اختبار الثغرات واستغلالها',
-            'الإصدار': 'Community, Pro',
+            'النوع': '🛠️ Penetration Testing Framework',
+            'الاستخدام': 'اختبار واستغلال الثغرات',
+            'المميزات': ['Exploits', 'Payloads', 'Post-Exploitation', 'Reporting'],
+            'الإصدار': 'Community (مجاني), Pro',
             'الرابط': 'https://www.metasploit.com/'
         },
         
         'Nmap': {
-            'النوع': 'Network Scanning',
-            'الاستخدام': 'مسح المنافذ والخدمات',
-            'الإصدار': 'مفتوح المصدر',
+            'النوع': '🛠️ Network Scanning',
+            'الاستخدام': 'مسح المنافذ والخدمات والأجهزة',
+            'المميزات': ['Port Scanning', 'Service Detection', 'OS Fingerprinting'],
+            'الإصدار': 'مفتوح المصدر (مجاني)',
             'الرابط': 'https://nmap.org/'
         },
         
         'Wireshark': {
-            'النوع': 'Network Analysis',
-            'الاستخدام': 'تحليل حركة الشبكة',
-            'الإصدار': 'مفتوح المصدر',
+            'النوع': '🛠️ Network Analysis',
+            'الاستخدام': 'تحليل حركة الشبكة والبروتوكولات',
+            'المميزات': ['Packet Capture', 'Protocol Analysis', 'Filtering'],
+            'الإصدار': 'مفتوح المصدر (مجاني)',
             'الرابط': 'https://www.wireshark.org/'
         },
         
-        'Hashcat': {
-            'النوع': 'Password Cracking',
-            'الاستخدام': 'كسر كلمات المرور',
-            'الإصدار': 'مفتوح المصدر',
-            'الرابط': 'https://hashcat.net/'
-        },
-        
         'SQLMap': {
-            'النوع': 'SQL Injection Testing',
-            'الاستخدام': 'اختبار ثغرات SQL Injection',
-            'الإصدار': 'مفتوح المصدر',
+            'النوع': '🛠️ SQL Injection Testing',
+            'الاستخدام': 'اختبار ثغرات SQL Injection تلقائياً',
+            'المميزات': ['Automatic Detection', 'Data Extraction', 'Database Fingerprint'],
+            'الإصدار': 'مفتوح المصدر (مجاني)',
             'الرابط': 'http://sqlmap.org/'
-        },
-        
-        'Nikto': {
-            'النوع': 'Web Server Scanner',
-            'الاستخدام': 'فحص خوادم الويب',
-            'الإصدار': 'مفتوح المصدر',
-            'الرابط': 'https://cirt.net/Nikto2'
         },
     },
     
-    'المعايير والإطارات': {
+    'المعايير': {
         'OWASP Top 10': {
-            'الوصف': 'أخطر 10 ثغرات في تطبيقات الويب',
+            'النوع': '📋 معايير الأمان',
             'الإصدار': '2021',
-            'المحتوى': [
-                '1. Broken Access Control',
-                '2. Cryptographic Failures',
-                '3. Injection',
-                '4. Insecure Design',
-                '5. Security Misconfiguration',
-                '6. Vulnerable Components',
-                '7. Authentication Failures',
-                '8. Software and Data Integrity',
-                '9. Logging Failures',
-                '10. SSRF'
+            'الوصف': 'أخطر 10 ثغرات في تطبيقات الويب',
+            'القائمة': [
+                '1. A01:2021 – Broken Access Control',
+                '2. A02:2021 – Cryptographic Failures',
+                '3. A03:2021 – Injection',
+                '4. A04:2021 – Insecure Design',
+                '5. A05:2021 – Security Misconfiguration',
+                '6. A06:2021 – Vulnerable Components',
+                '7. A07:2021 – Authentication Failures',
+                '8. A08:2021 – Software Integrity Failures',
+                '9. A09:2021 – Logging Failures',
+                '10. A10:2021 – SSRF'
             ]
         },
         
-        'NIST Cybersecurity Framework': {
-            'الوصف': 'إطار عمل الأمن السيبراني',
+        'NIST Framework': {
+            'النوع': '📋 إطار عمل الأمان',
             'الإصدار': '1.1',
+            'الوصف': 'إطار عمل الأمن السيبراني الأمريكي',
             'المحاور': [
-                '1. Identify (تحديد)',
-                '2. Protect (حماية)',
-                '3. Detect (كشف)',
-                '4. Respond (الاستجابة)',
-                '5. Recover (الاستعادة)'
+                '1. IDENTIFY - تحديد الأصول والمخاطر',
+                '2. PROTECT - حماية البيانات والأنظمة',
+                '3. DETECT - كشف الحوادث الأمنية',
+                '4. RESPOND - الاستجابة للحوادث',
+                '5. RECOVER - استعادة النظام'
             ]
         },
         
         'ISO 27001': {
-            'الوصف': 'معيار إدارة أمان المعلومات',
+            'النوع': '📋 معيار إدارة الأمان',
             'الإصدار': '2022',
-            'المميزات': [
-                '1. إدارة المخاطر',
-                '2. السياسات والإجراءات',
-                '3. الامتثال القانوني',
-                '4. التدقيق والمراقبة',
-                '5. إدارة الحوادث'
+            'الوصف': 'معيار عالمي لإدارة أمان المعلومات',
+            'المكونات': [
+                '✓ إدارة المخاطر',
+                '✓ السياسات والإجراءات',
+                '✓ الامتثال القانوني',
+                '✓ التدقيق والمراقبة',
+                '✓ إدارة الحوادث'
             ]
         },
     },
     
-    'نصائح الأمان': {
-        'كلمات المرور': [
-            '✓ استخدم 12+ حرف',
-            '✓ اخلط بين أحرف كبيرة وصغيرة',
-            '✓ أضف أرقام ورموز',
-            '✓ تجنب كلمات قاموسية',
-            '✓ لا تستخدم معلومات شخصية',
-            '✓ غيّر كلمات المرور بانتظام'
-        ],
-        
-        'الحسابات': [
-            '✓ فعّل MFA على جميع الحسابات',
-            '✓ استخدم مدير كلمات مرور',
-            '✓ راقب نشاط الحساب',
-            '✓ احذف الحسابات غير المستخدمة',
-            '✓ استخدم recovery options آمنة'
-        ],
-        
-        'الشبكات': [
-            '✓ استخدم firewall',
-            '✓ حدّث أنظمة التشغيل',
-            '✓ استخدم VPN',
-            '✓ فعّل HTTPS فقط',
-            '✓ نظّف السجلات بانتظام'
-        ],
-    },
+    'نصائح_ذهبية': [
+        '🔒 استخدم كلمات مرور قوية: 12+ حرف + أحرف كبيرة + أرقام + رموز',
+        '🔐 فعّل MFA على جميع الحسابات المهمة',
+        '🌐 استخدم HTTPS فقط، تجنب HTTP',
+        '🛡️ حدّث أنظمة التشغيل والبرامج بانتظام',
+        '📧 تحقق من رسائل البريد المريبة وتجنب الروابط الغريبة',
+        '🔑 استخدم مدير كلمات مرور موثوق',
+        '🚀 استخدم VPN على الشبكات العامة',
+        '📱 لا تترك أجهزتك بدون حماية',
+        '🔔 راقب حسابك بحثاً عن نشاط غريب',
+        '🧹 احذف البيانات القديمة التي لا تحتاجها'
+    ],
     
-    'المورد والدورات': {
-        'مواقع التعلم': [
-            'HackTheBox - اختبر مهاراتك العملية',
-            'TryHackMe - دورات تفاعلية للأمان',
-            'Coursera - دورات جامعية',
-            'edX - شهادات معترف بها',
-            'Cybrary - دورات مجانية'
-        ],
-        
-        'المجتمعات': [
-            'OWASP - مجتمع الأمان',
-            'Reddit r/cybersecurity',
-            'Twitter security community',
-            'GitHub security projects',
-            'Stack Overflow'
-        ],
-    }
+    'دورات_التعلم': [
+        '🎓 HackTheBox - اختبر مهاراتك العملية',
+        '🎓 TryHackMe - دورات تفاعلية مجانية',
+        '🎓 Coursera - شهادات جامعية معترف بها',
+        '🎓 edX - دورات من جامعات عريقة',
+        '🎓 Cybrary - دورات أمان مجانية',
+        '🎓 Udemy - دورات بأسعار منخفضة',
+        '🎓 Security Blue Team - معايير البطاقة الزرقاء'
+    ]
 }
 
-class AISecurityAssistant:
+class SmartAIAssistant:
     def __init__(self):
-        self.db = CYBERSECURITY_DATABASE
+        self.db = AI_DATABASE
+        self.current_date = datetime.now().strftime("%d/%m/%Y %H:%M")
     
-    def print_menu(self):
-        print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}🤖 مساعد الأمن السيبراني الذكي{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
+    def print_header(self):
+        os.system('clear' if os.name == 'posix' else 'cls')
+        print(f"\n{Fore.CYAN}{Back.BLUE}")
+        print("╔" + "═"*78 + "╗")
+        print("║" + " "*78 + "║")
+        print("║" + "🤖 مساعد الأمن السيبراني الذكي - نسخة متقدمة".center(78) + "║")
+        print("║" + "AI Cybersecurity Assistant - Advanced Edition".center(78) + "║")
+        print("║" + " "*78 + "║")
+        print("║" + f"التاريخ والوقت: {self.current_date}".center(78) + "║")
+        print("║" + " "*78 + "║")
+        print("╚" + "═"*78 + "╝")
+        print(f"{Style.RESET_ALL}\n")
+    
+    def show_main_menu(self):
+        self.print_header()
+        print(f"{Fore.GREEN}{'='*80}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}القائمة الرئيسية - اختر ما تريد:{Style.RESET_ALL}\n")
         
-        print(f"{Fore.GREEN}الفئات المتاحة:{Style.RESET_ALL}\n")
-        print(f"{Fore.CYAN}1{Style.RESET_ALL} - الثغرات الشائعة والحلول")
-        print(f"{Fore.CYAN}2{Style.RESET_ALL} - الهجمات الشهيرة والحماية")
-        print(f"{Fore.CYAN}3{Style.RESET_ALL} - أدوات الأمن السيبراني")
-        print(f"{Fore.CYAN}4{Style.RESET_ALL} - المعايير والإطارات")
-        print(f"{Fore.CYAN}5{Style.RESET_ALL} - نصائح الأمان")
-        print(f"{Fore.CYAN}6{Style.RESET_ALL} - المصادر والدورات")
-        print(f"{Fore.CYAN}7{Style.RESET_ALL} - البحث الحر")
-        print(f"{Fore.CYAN}8{Style.RESET_ALL} - العودة للقائمة الرئيسية")
-        print(f"\n{Fore.GREEN}{'='*70}{Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN}[1]{Style.RESET_ALL} 📚 الثغرات الأمنية والحلول")
+        print(f"{Fore.CYAN}[2]{Style.RESET_ALL} ⚔️ الهجمات الشهيرة والحماية")
+        print(f"{Fore.CYAN}[3]{Style.RESET_ALL} 🛠️ أدوات الأمن السيبراني")
+        print(f"{Fore.CYAN}[4]{Style.RESET_ALL} 📋 المعايير والمعايير الدولية")
+        print(f"{Fore.CYAN}[5]{Style.RESET_ALL} 💡 نصائح ذهبية للأمان")
+        print(f"{Fore.CYAN}[6]{Style.RESET_ALL} 🎓 دورات وموارد التعلم")
+        print(f"{Fore.CYAN}[7]{Style.RESET_ALL} 🔍 بحث حر عن أي موضوع")
+        print(f"{Fore.CYAN}[8]{Style.RESET_ALL} ❌ الخروج من المساعد")
+        
+        print(f"\n{Fore.GREEN}{'='*80}{Style.RESET_ALL}\n")
     
     def show_vulnerabilities(self):
-        print(f"\n{Fore.YELLOW}الثغرات الشائعة:{Style.RESET_ALL}\n")
-        for i, vuln in enumerate(self.db['الثغرات الشائعة'].keys(), 1):
-            print(f"{Fore.CYAN}{i}{Style.RESET_ALL}. {vuln}")
+        print(f"\n{Fore.YELLOW}الثغرات الأمنية المتاحة:{Style.RESET_ALL}\n")
+        vulns = list(self.db['الثغرات'].keys())
+        
+        for i, vuln in enumerate(vulns, 1):
+            print(f"  {Fore.CYAN}[{i}]{Style.RESET_ALL} {vuln}")
+        
+        print(f"\n  {Fore.CYAN}[0]{Style.RESET_ALL} العودة للقائمة الرئيسية\n")
         
         try:
-            choice = input(f"\n{Fore.YELLOW}اختر رقم الثغرة: {Style.RESET_ALL}").strip()
-            vulns = list(self.db['الثغرات الشائعة'].keys())
+            choice = input(f"{Fore.YELLOW}اختر رقم الثغرة: {Style.RESET_ALL}").strip()
+            if choice == '0':
+                return
             if 1 <= int(choice) <= len(vulns):
-                self.show_vulnerability_details(vulns[int(choice)-1])
+                self.show_vuln_details(vulns[int(choice)-1])
             else:
-                print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}")
+                print(f"{Fore.RED}❌ اختيار غير صحيح{Style.RESET_ALL}")
         except:
-            print(f"{Fore.RED}خطأ في الإدخال{Style.RESET_ALL}")
+            print(f"{Fore.RED}❌ خطأ في الإدخال{Style.RESET_ALL}")
     
-    def show_vulnerability_details(self, vuln_name):
-        vuln = self.db['الثغرات الشائعة'][vuln_name]
-        print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+    def show_vuln_details(self, vuln_name):
+        vuln = self.db['الثغرات'][vuln_name]
+        os.system('clear' if os.name == 'posix' else 'cls')
+        
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}📌 {vuln_name}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
         
-        print(f"{Fore.GREEN}الوصف:{Style.RESET_ALL} {vuln['الوصف']}")
         print(f"{Fore.RED}الخطورة:{Style.RESET_ALL} {vuln['الخطورة']}")
+        print(f"{Fore.GREEN}الوصف:{Style.RESET_ALL} {vuln['الوصف']}\n")
         
-        if 'الأعراض' in vuln:
-            print(f"{Fore.YELLOW}الأعراض:{Style.RESET_ALL} {vuln['الأعراض']}")
+        print(f"{Fore.YELLOW}الأعراض:{Style.RESET_ALL}")
+        for symptom in vuln['الأعراض']:
+            print(f"  • {symptom}")
         
-        if 'الحل' in vuln:
-            print(f"\n{Fore.GREEN}الحلول:{Style.RESET_ALL}")
-            for solution in vuln['الحل']:
-                print(f"  {solution}")
+        print(f"\n{Fore.GREEN}الحلول:{Style.RESET_ALL}")
+        for solution in vuln['الحلول']:
+            print(f"  {solution}")
         
-        if 'الأدوات' in vuln:
-            print(f"\n{Fore.CYAN}الأدوات:{Style.RESET_ALL} {vuln['الأدوات']}")
+        print(f"\n{Fore.CYAN}الأدوات:{Style.RESET_ALL} {vuln['الأدوات']}")
+        print(f"{Fore.CYAN}الكود الآمن:{Style.RESET_ALL} {vuln['الكود_الآمن']}")
+        print(f"{Fore.CYAN}المعايير:{Style.RESET_ALL} {vuln['المعايير']}")
         
-        if 'المعايير' in vuln:
-            print(f"{Fore.CYAN}المعايير:{Style.RESET_ALL} {vuln['المعايير']}")
-        
-        print()
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
     
     def show_attacks(self):
         print(f"\n{Fore.YELLOW}الهجمات الشهيرة:{Style.RESET_ALL}\n")
-        for i, attack in enumerate(self.db['الهجمات الشهيرة'].keys(), 1):
-            print(f"{Fore.CYAN}{i}{Style.RESET_ALL}. {attack}")
+        attacks = list(self.db['الهجمات_الشهيرة'].keys())
+        
+        for i, attack in enumerate(attacks, 1):
+            print(f"  {Fore.CYAN}[{i}]{Style.RESET_ALL} {attack}")
+        
+        print(f"\n  {Fore.CYAN}[0]{Style.RESET_ALL} العودة للقائمة الرئيسية\n")
         
         try:
-            choice = input(f"\n{Fore.YELLOW}اختر رقم الهجوم: {Style.RESET_ALL}").strip()
-            attacks = list(self.db['الهجمات الشهيرة'].keys())
+            choice = input(f"{Fore.YELLOW}اختر رقم الهجوم: {Style.RESET_ALL}").strip()
+            if choice == '0':
+                return
             if 1 <= int(choice) <= len(attacks):
                 self.show_attack_details(attacks[int(choice)-1])
             else:
-                print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}")
+                print(f"{Fore.RED}❌ اختيار غير صحيح{Style.RESET_ALL}")
         except:
-            print(f"{Fore.RED}خطأ في الإدخال{Style.RESET_ALL}")
+            print(f"{Fore.RED}❌ خطأ في الإدخال{Style.RESET_ALL}")
     
     def show_attack_details(self, attack_name):
-        attack = self.db['الهجمات الشهيرة'][attack_name]
-        print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+        attack = self.db['الهجمات_الشهيرة'][attack_name]
+        os.system('clear' if os.name == 'posix' else 'cls')
+        
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}⚔️ {attack_name}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
         
-        print(f"{Fore.GREEN}الوصف:{Style.RESET_ALL} {attack['الوصف']}")
+        print(f"{Fore.GREEN}النوع:{Style.RESET_ALL} {attack['النوع']}")
         print(f"{Fore.RED}الخطورة:{Style.RESET_ALL} {attack['الخطورة']}")
+        print(f"{Fore.CYAN}الوصف:{Style.RESET_ALL} {attack['الوصف']}\n")
         
-        if 'الأنواع' in attack:
-            print(f"{Fore.YELLOW}الأنواع:{Style.RESET_ALL} {attack['الأنواع']}")
+        print(f"{Fore.YELLOW}الأنواع:{Style.RESET_ALL}")
+        for atype in attack['الأنواع']:
+            print(f"  {atype}")
         
-        if 'الحماية' in attack:
-            print(f"\n{Fore.GREEN}الحماية:{Style.RESET_ALL}")
-            for protection in attack['الحماية']:
-                print(f"  {protection}")
+        print(f"\n{Fore.GREEN}الحماية:{Style.RESET_ALL}")
+        for protection in attack['الحماية']:
+            print(f"  {protection}")
         
-        if 'الأدوات' in attack:
-            print(f"\n{Fore.CYAN}الأدوات:{Style.RESET_ALL} {attack['الأدوات']}")
-        
-        print()
+        print(f"\n{Fore.CYAN}الأدوات:{Style.RESET_ALL} {attack['الأدوات']}")
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
     
     def show_tools(self):
         print(f"\n{Fore.YELLOW}أدوات الأمن السيبراني:{Style.RESET_ALL}\n")
-        for i, tool in enumerate(self.db['أدوات الأمن السيبراني'].keys(), 1):
-            print(f"{Fore.CYAN}{i}{Style.RESET_ALL}. {tool}")
+        tools = list(self.db['الأدوات'].keys())
+        
+        for i, tool in enumerate(tools, 1):
+            print(f"  {Fore.CYAN}[{i}]{Style.RESET_ALL} {tool}")
+        
+        print(f"\n  {Fore.CYAN}[0]{Style.RESET_ALL} العودة للقائمة الرئيسية\n")
         
         try:
-            choice = input(f"\n{Fore.YELLOW}اختر رقم الأداة: {Style.RESET_ALL}").strip()
-            tools = list(self.db['أدوات الأمن السيبراني'].keys())
+            choice = input(f"{Fore.YELLOW}اختر رقم الأداة: {Style.RESET_ALL}").strip()
+            if choice == '0':
+                return
             if 1 <= int(choice) <= len(tools):
-                tool_name = tools[int(choice)-1]
-                tool = self.db['أدوات الأمن السيبراني'][tool_name]
-                print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-                print(f"{Fore.YELLOW}🛠️ {tool_name}{Style.RESET_ALL}")
-                print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
-                
-                for key, value in tool.items():
-                    print(f"{Fore.GREEN}{key}:{Style.RESET_ALL} {value}")
-                print()
+                self.show_tool_details(tools[int(choice)-1])
             else:
-                print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}")
+                print(f"{Fore.RED}❌ اختيار غير صحيح{Style.RESET_ALL}")
         except:
-            print(f"{Fore.RED}خطأ في الإدخال{Style.RESET_ALL}")
+            print(f"{Fore.RED}❌ خطأ في الإدخال{Style.RESET_ALL}")
     
-    def show_frameworks(self):
-        print(f"\n{Fore.YELLOW}المعايير والإطارات:{Style.RESET_ALL}\n")
-        for i, framework in enumerate(self.db['المعايير والإطارات'].keys(), 1):
-            print(f"{Fore.CYAN}{i}{Style.RESET_ALL}. {framework}")
+    def show_tool_details(self, tool_name):
+        tool = self.db['الأدوات'][tool_name]
+        os.system('clear' if os.name == 'posix' else 'cls')
         
-        try:
-            choice = input(f"\n{Fore.YELLOW}اختر رقم الإطار: {Style.RESET_ALL}").strip()
-            frameworks = list(self.db['المعايير والإطارات'].keys())
-            if 1 <= int(choice) <= len(frameworks):
-                framework_name = frameworks[int(choice)-1]
-                framework = self.db['المعايير والإطارات'][framework_name]
-                print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-                print(f"{Fore.YELLOW}📋 {framework_name}{Style.RESET_ALL}")
-                print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
-                
-                print(f"{Fore.GREEN}الوصف:{Style.RESET_ALL} {framework['الوصف']}")
-                print(f"{Fore.YELLOW}الإصدار:{Style.RESET_ALL} {framework['الإصدار']}")
-                
-                for key, values in framework.items():
-                    if key not in ['الوصف', 'الإصدار']:
-                        print(f"\n{Fore.GREEN}{key}:{Style.RESET_ALL}")
-                        for item in values:
-                            print(f"  {item}")
-                print()
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}🛠️ {tool_name}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
+        
+        for key, value in tool.items():
+            if key == 'المميزات':
+                print(f"{Fore.GREEN}{key}:{Style.RESET_ALL}")
+                for feature in value:
+                    print(f"  • {feature}")
             else:
-                print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}")
-        except:
-            print(f"{Fore.RED}خطأ في الإدخال{Style.RESET_ALL}")
+                print(f"{Fore.GREEN}{key}:{Style.RESET_ALL} {value}")
+        
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
     
     def show_tips(self):
-        print(f"\n{Fore.YELLOW}نصائح الأمان:{Style.RESET_ALL}\n")
-        for i, category in enumerate(self.db['نصائح الأمان'].keys(), 1):
-            print(f"{Fore.CYAN}{i}{Style.RESET_ALL}. {category}")
+        os.system('clear' if os.name == 'posix' else 'cls')
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}💡 النصائح الذهبية للأمان{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
         
-        try:
-            choice = input(f"\n{Fore.YELLOW}اختر رقم الفئة: {Style.RESET_ALL}").strip()
-            categories = list(self.db['نصائح الأمان'].keys())
-            if 1 <= int(choice) <= len(categories):
-                category_name = categories[int(choice)-1]
-                print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-                print(f"{Fore.YELLOW}💡 {category_name}{Style.RESET_ALL}")
-                print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
-                
-                for tip in self.db['نصائح الأمان'][category_name]:
-                    print(f"  {tip}")
-                print()
-            else:
-                print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}")
-        except:
-            print(f"{Fore.RED}خطأ في الإدخال{Style.RESET_ALL}")
+        for i, tip in enumerate(self.db['نصائح_ذهبية'], 1):
+            print(f"{Fore.GREEN}[{i}]{Style.RESET_ALL} {tip}\n")
+        
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
     
-    def show_resources(self):
-        print(f"\n{Fore.YELLOW}المصادر والدورات:{Style.RESET_ALL}\n")
+    def show_courses(self):
+        os.system('clear' if os.name == 'posix' else 'cls')
+        print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}🎓 دورات وموارد التعلم{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
         
-        for category, items in self.db['المورد والدورات'].items():
-            print(f"\n{Fore.CYAN}{category}:{Style.RESET_ALL}")
-            for item in items:
-                print(f"  • {item}")
-        print()
-    
-    def free_search(self):
-        query = input(f"\n{Fore.YELLOW}ابحث عن موضوع (مثل: SQL Injection): {Style.RESET_ALL}").strip().lower()
+        for course in self.db['دورات_التعلم']:
+            print(f"  {course}\n")
         
-        results = []
-        for category, items in self.db.items():
-            if isinstance(items, dict):
-                for key, value in items.items():
-                    if query in key.lower():
-                        results.append((category, key))
-        
-        if results:
-            print(f"\n{Fore.GREEN}وجدنا {len(results)} نتيجة:{Style.RESET_ALL}\n")
-            for i, (category, item) in enumerate(results, 1):
-                print(f"{Fore.CYAN}{i}{Style.RESET_ALL}. {item} (من {category})")
-            
-            try:
-                choice = input(f"\n{Fore.YELLOW}اختر رقم النتيجة: {Style.RESET_ALL}").strip()
-                if 1 <= int(choice) <= len(results):
-                    category, item = results[int(choice)-1]
-                    if category == 'الثغرات الشائعة':
-                        self.show_vulnerability_details(item)
-                    elif category == 'الهجمات الشهيرة':
-                        self.show_attack_details(item)
-                else:
-                    print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}")
-            except:
-                print(f"{Fore.RED}خطأ في الإدخال{Style.RESET_ALL}")
-        else:
-            print(f"{Fore.RED}لم نجد نتائج تطابق البحث{Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
     
     def run(self):
         while True:
-            self.print_menu()
+            self.show_main_menu()
             choice = input(f"{Fore.CYAN}اختيارك: {Style.RESET_ALL}").strip()
             
             if choice == '1':
@@ -577,16 +532,48 @@ class AISecurityAssistant:
             elif choice == '3':
                 self.show_tools()
             elif choice == '4':
-                self.show_frameworks()
+                os.system('clear' if os.name == 'posix' else 'cls')
+                print(f"\n{Fore.CYAN}{'='*80}{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW}📋 المعايير والمعايير الدولية{Style.RESET_ALL}")
+                print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
+                
+                for framework_name, framework in self.db['المعايير'].items():
+                    print(f"{Fore.GREEN}{framework_name}:{Style.RESET_ALL}")
+                    print(f"  النوع: {framework['النوع']}")
+                    print(f"  الإصدار: {framework['الإصدار']}")
+                    print(f"  الوصف: {framework['الوصف']}\n")
+                    
+                    for item in list(framework.values())[3]:
+                        print(f"    {item}")
+                    print()
+                
+                print(f"{Fore.CYAN}{'='*80}{Style.RESET_ALL}\n")
             elif choice == '5':
                 self.show_tips()
             elif choice == '6':
-                self.show_resources()
+                self.show_courses()
             elif choice == '7':
-                self.free_search()
+                query = input(f"\n{Fore.YELLOW}ابحث عن موضوع (مثل: SQL): {Style.RESET_ALL}").strip().lower()
+                results = []
+                
+                for vuln in self.db['الثغرات']:
+                    if query in vuln.lower():
+                        results.append(('ثغرة', vuln))
+                
+                for attack in self.db['الهجمات_الشهيرة']:
+                    if query in attack.lower():
+                        results.append(('هجوم', attack))
+                
+                if results:
+                    print(f"\n{Fore.GREEN}وجدنا {len(results)} نتيجة:{Style.RESET_ALL}\n")
+                    for i, (ttype, item) in enumerate(results, 1):
+                        print(f"  {Fore.CYAN}[{i}]{Style.RESET_ALL} {item} ({ttype})")
+                else:
+                    print(f"{Fore.RED}لم نجد نتائج{Style.RESET_ALL}\n")
             elif choice == '8':
+                print(f"\n{Fore.GREEN}شكراً لاستخدام المساعد! 👋{Style.RESET_ALL}\n")
                 return
             else:
-                print(f"{Fore.RED}اختيار غير صحيح{Style.RESET_ALL}\n")
+                print(f"{Fore.RED}❌ اختيار غير صحيح{Style.RESET_ALL}\n")
             
             input(f"{Fore.YELLOW}اضغط Enter للمتابعة...{Style.RESET_ALL}")
